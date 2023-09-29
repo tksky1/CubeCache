@@ -11,9 +11,13 @@ func printEvicted(key string, value lru.CacheValue) {
 	println("evicted:", key)
 }
 
+func generateValue(key string) (lru.CacheValue, error) {
+	return &lru.Bytes{B: []byte(uuid.New().String())}, nil
+}
+
 func TestCubeSetGet(t *testing.T) {
 	syncMap := new(sync.Map)
-	cube := New("test", nil, printEvicted, 104857600)
+	cube := New("test", generateValue, printEvicted, 104857600)
 	for i := 1; i <= 10000; i++ {
 		go func(t *testing.T) {
 			entry := lru.CacheEntry{

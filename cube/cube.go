@@ -12,11 +12,11 @@ type Cube struct {
 	mu     []sync.RWMutex
 	name   string
 	// getterFunc is the custom func to call to get the target value
-	getterFunc func(key string) ([]byte, error)
+	getterFunc func(key string) (value lru.CacheValue, err error)
 }
 
-func New(name string, getterFunc func(key string) ([]byte, error), OnEvicted func(key string, value lru.CacheValue),
-	maxBytes int64) *Cube {
+func New(name string, getterFunc func(key string) (value lru.CacheValue, err error),
+	OnEvicted func(key string, value lru.CacheValue), maxBytes int64) *Cube {
 	cube := &Cube{
 		shards:     make([]*lru.Cache, 32),
 		mu:         make([]sync.RWMutex, 32),
@@ -50,5 +50,15 @@ func (c *Cube) Get(key string) (value lru.CacheValue, ok bool) {
 	shard := GetShardId(key)
 	c.mu[shard].RLock()
 	defer c.mu[shard].RUnlock()
-	return c.shards[shard].Get(key)
+	value, ok = c.shards[shard].Get(key)
+	// Cache do not have that record. Get by user func
+	if !ok && c.getterFunc != nil {
+		valueOutsideCache, err := c.getterFunc(key)
+		if err == nil {
+			value = valueOutsideCache
+			ok = true
+			c.shards[shard].Set(key, value)
+		}
+	}
+	return value, ok
 }
