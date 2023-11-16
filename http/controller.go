@@ -4,6 +4,7 @@ import (
 	"cubeCache/lru"
 	"github.com/gin-gonic/gin"
 	"io"
+	"strconv"
 )
 
 func handleGet(ctx *gin.Context) {
@@ -39,4 +40,14 @@ func handlePost(ctx *gin.Context) {
 	byteValue := &lru.Bytes{B: body}
 	cube.Set(key, byteValue)
 	ctx.JSON(200, gin.H{"msg": "success"})
+}
+
+func handleCreateCube(ctx *gin.Context) {
+	name := ctx.PostForm("name")
+	maxBytes, err := strconv.ParseInt(ctx.PostForm("max_bytes"), 10, 64)
+	if name == "" || err != nil {
+		ctx.JSON(400, gin.H{"msg": "illegal post-form params"})
+		return
+	}
+	cubeCache.NewCube(name, nil, nil, maxBytes)
 }

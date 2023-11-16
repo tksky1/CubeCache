@@ -10,7 +10,7 @@ type CubeCache struct {
 	Cubes map[string]*cube.Cube
 }
 
-func NewCubeCache() *CubeCache {
+func New() *CubeCache {
 	return &CubeCache{Cubes: make(map[string]*cube.Cube)}
 }
 
