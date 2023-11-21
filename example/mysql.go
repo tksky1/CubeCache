@@ -30,5 +30,3 @@ function executeQuery(db, query)
     end
 end
 `
-
-func

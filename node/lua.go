@@ -1,4 +1,4 @@
-package util
+package node
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 )
 
 func ExecuteQueryLua(L *lua.LState, luaScript string, key string) ([]byte, error) {
-	// 执行用户提供的Lua脚本
+	// execute query lua when key not in cache
 	if err := L.DoString(luaScript); err != nil {
 		return nil, fmt.Errorf("lua execute error: %v", err)
 	}
