@@ -2,6 +2,7 @@ package cube
 
 import (
 	"cubeCache/lru"
+	"cubeCache/rpc"
 	"hash/fnv"
 	"sync"
 )
@@ -10,21 +11,18 @@ import (
 type Cube struct {
 	shards []*lru.Cache
 	mu     []sync.RWMutex
-	name   string
-	// getterFunc is the custom func to call to get the target value
-	getterFunc func(key string) (value lru.CacheValue, err error)
+	*rpc.CreateCubeRequest
+	keyGetterFunc map[string]string
 }
 
-func New(name string, getterFunc func(key string) (value lru.CacheValue, err error),
-	OnEvicted func(key string, value lru.CacheValue), maxBytes int64) *Cube {
+func New(req *rpc.CreateCubeRequest) *Cube {
 	cube := &Cube{
-		shards:     make([]*lru.Cache, 32),
-		mu:         make([]sync.RWMutex, 32),
-		name:       name,
-		getterFunc: getterFunc,
+		shards: make([]*lru.Cache, 32),
+		mu:     make([]sync.RWMutex, 32),
 	}
+	cube.CreateCubeRequest = req
 	for i := range cube.shards {
-		cube.shards[i] = lru.New(maxBytes/32, OnEvicted)
+		cube.shards[i] = lru.New(cube.MaxBytes/32, cube.OnEvictedFunc)
 	}
 	return cube
 }
@@ -52,8 +50,13 @@ func (c *Cube) Get(key string) (value lru.CacheValue, ok bool) {
 	defer c.mu[shard].RUnlock()
 	value, ok = c.shards[shard].Get(key)
 	// Cache do not have that record. Get by user func
-	if !ok && c.getterFunc != nil {
-		valueOutsideCache, err := c.getterFunc(key)
+	if !ok {
+		keyGetter, ok := c.keyGetterFunc[key]
+		if ok {
+			// TODO: execute keyGetter
+		} else if c.CubeGetterFunc != nil {
+			// TODO: execute CubeGetterFunc
+		}
 		if err == nil {
 			value = valueOutsideCache
 			ok = true

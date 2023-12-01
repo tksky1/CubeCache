@@ -8,7 +8,7 @@ type Cache struct {
 	nowBytes  int64
 	cache     map[string]*list.Element
 	innerList *list.List
-	OnEvicted func(key string, value CacheValue)
+	OnEvicted *string
 }
 
 type CacheEntry struct {
@@ -17,16 +17,18 @@ type CacheEntry struct {
 }
 
 // CacheValue is some type with Len()int to tell how many bytes it takes
-type CacheValue interface {
-	Len() int
+type CacheValue []byte
+
+func (c *CacheValue) Len() int {
+	return len(*c)
 }
 
-func New(maxBytes int64, onEvicted func(key string, value CacheValue)) *Cache {
+func New(maxBytes int64, onEvictedFunc *string) *Cache {
 	return &Cache{
 		maxBytes:  maxBytes,
 		cache:     make(map[string]*list.Element),
 		innerList: list.New(),
-		OnEvicted: onEvicted,
+		OnEvicted: onEvictedFunc,
 	}
 }
 
@@ -49,7 +51,7 @@ func (c *Cache) EliminateOldNode() {
 	delete(c.cache, oldEntry.Key)
 	c.nowBytes -= int64(len(oldEntry.Key)) + int64(oldEntry.Value.Len())
 	if c.OnEvicted != nil {
-		c.OnEvicted(oldEntry.Key, oldEntry.Value)
+		// TODO
 	}
 }
 

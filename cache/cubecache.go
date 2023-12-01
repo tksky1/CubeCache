@@ -2,7 +2,7 @@ package cache
 
 import (
 	"cubeCache/cube"
-	"cubeCache/lru"
+	"cubeCache/rpc"
 )
 
 // CubeCache keeps map from name to cube
@@ -14,8 +14,7 @@ func New() *CubeCache {
 	return &CubeCache{Cubes: make(map[string]*cube.Cube)}
 }
 
-func (c *CubeCache) NewCube(name string, getterFunc func(key string) (value lru.CacheValue, err error),
-	OnEvicted func(key string, value lru.CacheValue), maxBytes int64) {
-	newCube := cube.New(name, getterFunc, OnEvicted, maxBytes)
-	c.Cubes[name] = newCube
+func (c *CubeCache) NewCube(request *rpc.CreateCubeRequest) {
+	newCube := cube.New(request)
+	c.Cubes[request.CubeName] = newCube
 }

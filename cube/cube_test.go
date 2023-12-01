@@ -12,7 +12,7 @@ func printEvicted(key string, value lru.CacheValue) {
 }
 
 func generateValue(key string) (lru.CacheValue, error) {
-	return &lru.Bytes{B: []byte(uuid.New().String())}, nil
+	return []byte(uuid.New().String()), nil
 }
 
 func TestCubeSetGet(t *testing.T) {
@@ -33,7 +33,7 @@ func TestCubeSetGet(t *testing.T) {
 			}
 			mapOut, _ := syncMap.Load(entry.Key)
 			std := mapOut.(*lru.Bytes).B
-			if string(std) != string(cubeOut.(*lru.Bytes).B) {
+			if string(std) != string(cubeOut) {
 				t.Errorf("test concurrency fail 2")
 				return
 			}

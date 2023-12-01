@@ -11,7 +11,6 @@ import "cubeCache/rpc"
 type CubeClient struct {
 	Conn *grpc.ClientConn
 	cli  rpc.CubeClient
-	rpc.CubeClient
 }
 
 func NewCubeClient(target string, opts ...grpc.DialOption) *CubeClient {
@@ -23,24 +22,38 @@ func NewCubeClient(target string, opts ...grpc.DialOption) *CubeClient {
 	return ret
 }
 
-func (c *CubeClient) Set(cubeName string, key string, value []byte, getterFunc string) (ok bool, msg string, connErr error) {
-
+func (c *CubeClient) Set(request *rpc.SetValueRequest) (ok bool, msg string, connErr error) {
 	ctx := context.Background()
-	md := metadata.New(map[string]string{"cube_cache_key": key})
+	md := metadata.New(map[string]string{"cube_cache_key": request.Key})
 
-	// 将 Metadata 对象附加到上下文中
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	req := &rpc.SetValueRequest{
-		CubeName:   cubeName,
-		Key:        key,
-		Value:      value,
-		GetterFunc: nil,
-	}
-	if getterFunc != "" {
-		req.GetterFunc = &getterFunc
-	}
-
-	res, err := c.cli.Set(ctx, req)
+	res, err := c.cli.Set(ctx, request)
 	return res.Ok, res.Message, err
+}
+
+func (c *CubeClient) Get(request *rpc.GetValueRequest) (ok bool, value []byte, msg string, connErr error) {
+	ctx := context.Background()
+	md := metadata.New(map[string]string{"cube_cache_key": request.Key})
+
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	res, err := c.cli.Get(ctx, request)
+	if err != nil {
+		return false, nil, "rpc error", err
+	}
+	return res.Ok, res.Value, res.Message, nil
+}
+
+func (c *CubeClient) CreateCube(request *rpc.CreateCubeRequest) (ok bool, msg string, connErr error) {
+	ctx := context.Background()
+	md := metadata.New(map[string]string{"cube_cache_create_cube": "true"})
+
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	res, err := c.cli.CreateCube(ctx, request)
+	if err != nil {
+		return false, "rpc error", err
+	}
+	return res.Success, res.Message, nil
 }
