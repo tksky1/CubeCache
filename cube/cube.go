@@ -51,15 +51,14 @@ func (c *Cube) Get(key string) (value lru.CacheValue, ok bool) {
 	value, ok = c.shards[shard].Get(key)
 	// Cache do not have that record. Get by user func
 	if !ok {
-		keyGetter, ok := c.keyGetterFunc[key]
+		keyGetter := ""
+		keyGetter, ok = c.keyGetterFunc[key]
 		if ok {
 			// TODO: execute keyGetter
+			println(keyGetter)
+			c.shards[shard].Set(key, value)
 		} else if c.CubeGetterFunc != nil {
 			// TODO: execute CubeGetterFunc
-		}
-		if err == nil {
-			value = valueOutsideCache
-			ok = true
 			c.shards[shard].Set(key, value)
 		}
 	}

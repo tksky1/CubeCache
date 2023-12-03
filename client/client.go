@@ -2,34 +2,51 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"log"
 )
 import "cubeCache/rpc"
 
 type CubeClient struct {
-	Conn *grpc.ClientConn
-	cli  rpc.CubeClient
+	Conn    *grpc.ClientConn
+	cli     rpc.CubeClient
+	ctrlCli rpc.CubeControlClient
 }
 
-func NewCubeClient(target string, opts ...grpc.DialOption) *CubeClient {
-	conn, err := grpc.Dial(target, opts...)
+func NewCubeClient(cubeServer string, ctrlServer string, opts ...grpc.DialOption) *CubeClient {
+	c, err := tls.LoadX509KeyPair("../master/cert", "../master/key")
 	if err != nil {
-		log.Fatalf("Failed to connect: %v", err)
+		log.Fatalf("credentials.NewServerTLSFromFile err: %v", err)
 	}
-	ret := &CubeClient{Conn: conn, cli: rpc.NewCubeClient(conn)}
+	transportCredits := credentials.NewTLS(&tls.Config{
+		Certificates:       []tls.Certificate{c},
+		InsecureSkipVerify: true,
+	})
+	options := append(make([]grpc.DialOption, 0))
+	conn, err := grpc.Dial(cubeServer, append(append(options, opts...), grpc.WithTransportCredentials(transportCredits))...)
+	if err != nil {
+		log.Fatalf("Failed to connect to cube server: %v", err)
+	}
+	connCtrl, err := grpc.Dial(ctrlServer, append(append(options, opts...), grpc.WithInsecure())...)
+	if err != nil {
+		log.Fatalf("Failed to connect to cube control server: %v", err)
+	}
+	ret := &CubeClient{Conn: conn, cli: rpc.NewCubeClient(conn), ctrlCli: rpc.NewCubeControlClient(connCtrl)}
 	return ret
 }
 
-func (c *CubeClient) Set(request *rpc.SetValueRequest) (ok bool, msg string, connErr error) {
+func (c *CubeClient) Set(request *rpc.SetValueRequest) (ok bool, connErr error) {
 	ctx := context.Background()
-	md := metadata.New(map[string]string{"cube_cache_key": request.Key})
-
+	md := metadata.New(map[string]string{"cube_cache_key": request.Key, "content-type": "application/grpc"})
 	ctx = metadata.NewOutgoingContext(ctx, md)
-
 	res, err := c.cli.Set(ctx, request)
-	return res.Ok, res.Message, err
+	if res == nil {
+		return false, err
+	}
+	return res.Ok, err
 }
 
 func (c *CubeClient) Get(request *rpc.GetValueRequest) (ok bool, value []byte, msg string, connErr error) {
@@ -51,7 +68,7 @@ func (c *CubeClient) CreateCube(request *rpc.CreateCubeRequest) (ok bool, msg st
 
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	res, err := c.cli.CreateCube(ctx, request)
+	res, err := c.ctrlCli.CreateCube(ctx, request)
 	if err != nil {
 		return false, "rpc error", err
 	}

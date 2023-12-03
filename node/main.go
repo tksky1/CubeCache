@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"cubeCache/cache"
 	"cubeCache/rpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net"
 )
@@ -19,16 +21,25 @@ func main() {
 		OnEvictedFunc:  nil,
 		DelayWrite:     nil,
 	})
-	s := grpc.NewServer()
+
+	c, err := tls.LoadX509KeyPair("master/cert", "master/key")
+	if err != nil {
+		log.Fatalf("credentials.NewServerTLSFromFile err: %v", err)
+	}
+	transportCredits := credentials.NewTLS(&tls.Config{
+		Certificates:       []tls.Certificate{c},
+		InsecureSkipVerify: true,
+	})
+	s := grpc.NewServer(grpc.Creds(transportCredits))
 
 	rpc.RegisterCubeServer(s, &CubeNode{})
 
-	lis, err := net.Listen("tcp", "0.0.0.0:4011")
+	lis, err := net.Listen("tcp", "0.0.0.0:4012")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	println("listening at 0.0.0.0:4011")
+	println("listening at 0.0.0.0:4012")
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

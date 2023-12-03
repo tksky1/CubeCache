@@ -16,5 +16,5 @@ type CubeMaster struct {
 
 func (m *CubeMaster) CreateCube(ctx context.Context, in *rpc.CreateCubeRequest) (*rpc.CreateCubeResponse, error) {
 	//TODO implement me
-	panic("implement me")
+	return &rpc.CreateCubeResponse{}, nil
 }

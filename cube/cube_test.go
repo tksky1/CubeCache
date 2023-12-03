@@ -22,7 +22,7 @@ func TestCubeSetGet(t *testing.T) {
 		go func(t *testing.T) {
 			entry := lru.CacheEntry{
 				Key:   uuid.New().String(),
-				Value: &lru.Bytes{B: []byte(uuid.New().String())},
+				Value: []byte(uuid.New().String()),
 			}
 			cube.Set(entry.Key, entry.Value)
 			syncMap.Store(entry.Key, entry.Value)

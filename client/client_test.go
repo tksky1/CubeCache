@@ -3,12 +3,12 @@ package client
 import (
 	"cubeCache/rpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"testing"
 )
 
 func TestClient(t *testing.T) {
-	cli := NewCubeClient("127.0.0.1:4010", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	option := make([]grpc.DialOption, 0)
+	cli := NewCubeClient("127.0.0.1:4010", "127.0.0.1:4011", option...)
 	_, _, err := cli.CreateCube(&rpc.CreateCubeRequest{
 		CubeName:       "test",
 		MaxBytes:       10000,
@@ -19,7 +19,7 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	ok, _, err := cli.Set(&rpc.SetValueRequest{
+	ok, err := cli.Set(&rpc.SetValueRequest{
 		CubeName:   "test",
 		Key:        "key1",
 		Value:      []byte("abc"),

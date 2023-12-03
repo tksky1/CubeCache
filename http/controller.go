@@ -1,7 +1,7 @@
 package http
 
 import (
-	"cubeCache/lru"
+	"cubeCache/rpc"
 	"github.com/gin-gonic/gin"
 	"io"
 	"strconv"
@@ -20,8 +20,7 @@ func handleGet(ctx *gin.Context) {
 		ctx.JSON(401, gin.H{"msg": "user getter func for " + cubeName + "/" + key + " error"})
 		return
 	}
-	bytes := byteValue.(*lru.Bytes)
-	ctx.Data(200, "application/octet-stream", bytes.B)
+	ctx.Data(200, "application/octet-stream", byteValue)
 }
 
 func handlePost(ctx *gin.Context) {
@@ -37,8 +36,7 @@ func handlePost(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"msg": "read request body fail"})
 		return
 	}
-	byteValue := &lru.Bytes{B: body}
-	cube.Set(key, byteValue)
+	cube.Set(key, body)
 	ctx.JSON(200, gin.H{"msg": "success"})
 }
 
@@ -49,5 +47,11 @@ func handleCreateCube(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"msg": "illegal post-form params"})
 		return
 	}
-	cubeCache.NewCube(name, nil, nil, maxBytes)
+	cubeCache.NewCube(&rpc.CreateCubeRequest{
+		CubeName:       name,
+		MaxBytes:       maxBytes,
+		CubeGetterFunc: nil,
+		OnEvictedFunc:  nil,
+		DelayWrite:     nil,
+	})
 }
