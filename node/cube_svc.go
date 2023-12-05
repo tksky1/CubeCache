@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"cubeCache/cube"
+	"cubeCache/cache"
 	"cubeCache/rpc"
+	"errors"
 )
 
 type CubeNode struct {
 	*rpc.UnimplementedCubeServer
-	cube *cube.Cube
+	cache *cache.CubeCache
 }
 
 func (n CubeNode) Get(ctx context.Context, req *rpc.GetValueRequest) (res *rpc.GetValueResponse, err error) {
@@ -16,6 +17,10 @@ func (n CubeNode) Get(ctx context.Context, req *rpc.GetValueRequest) (res *rpc.G
 }
 
 func (n CubeNode) Set(ctx context.Context, req *rpc.SetValueRequest) (res *rpc.SetValueResponse, err error) {
-	//TODO implement me
-	panic("implement me")
+	cube, ok := n.cache.GetCube(req.CubeName)
+	if ok {
+		cube.Set(req.Key, req.Value, req.GetterFunc)
+		return nil, nil
+	}
+	return nil, errors.New("cube not exist")
 }

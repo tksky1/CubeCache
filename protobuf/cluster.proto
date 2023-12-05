@@ -1,47 +1,5 @@
 syntax = "proto3";
 
-option go_package = "cubecache/rpc";
+option go_package = "cubecache/cluster";
 
-message SetValueRequest {
-  string cubeName = 1;
-  string key = 2;
-  bytes value = 3;
-  optional string getterFunc = 4; // optional getter lua script for specified key
-}
 
-message SetValueResponse {
-  bool ok = 1;
-}
-
-message GetValueRequest {
-  string cubeName = 1;
-  string key = 2;
-}
-
-message GetValueResponse {
-  bool ok = 1;
-  bytes value = 2;
-  string message = 3;
-}
-
-message CreateCubeRequest{
-  string cubeName = 1;
-  int64 maxBytes = 2;
-  optional string cubeGetterFunc = 3; // optional default getter lua script for the cube
-  optional string onEvictedFunc = 4; // optional call-back lua script when key is evicted
-  optional bool delayWrite = 5; // use write-delay mode
-}
-
-message CreateCubeResponse{
-  bool success = 1;
-  string message = 2;
-}
-
-service Cube {
-  rpc Get(GetValueRequest) returns (GetValueResponse){}
-  rpc Set(SetValueRequest) returns (SetValueResponse){}
-}
-
-service CubeControl{
-  rpc CreateCube(CreateCubeRequest) returns(CreateCubeResponse){}
-}

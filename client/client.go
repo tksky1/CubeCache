@@ -38,15 +38,12 @@ func NewCubeClient(cubeServer string, ctrlServer string, opts ...grpc.DialOption
 	return ret
 }
 
-func (c *CubeClient) Set(request *rpc.SetValueRequest) (ok bool, connErr error) {
+func (c *CubeClient) Set(request *rpc.SetValueRequest) (err error) {
 	ctx := context.Background()
 	md := metadata.New(map[string]string{"cube_cache_key": request.Key, "content-type": "application/grpc"})
 	ctx = metadata.NewOutgoingContext(ctx, md)
-	res, err := c.cli.Set(ctx, request)
-	if res == nil {
-		return false, err
-	}
-	return res.Ok, err
+	_, err = c.cli.Set(ctx, request)
+	return err
 }
 
 func (c *CubeClient) Get(request *rpc.GetValueRequest) (ok bool, value []byte, msg string, connErr error) {

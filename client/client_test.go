@@ -19,13 +19,13 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	ok, err := cli.Set(&rpc.SetValueRequest{
+	err = cli.Set(&rpc.SetValueRequest{
 		CubeName:   "test",
 		Key:        "key1",
 		Value:      []byte("abc"),
 		GetterFunc: nil,
 	})
-	if !ok || err != nil {
+	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	ok, value, _, err := cli.Get(&rpc.GetValueRequest{

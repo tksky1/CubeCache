@@ -5,14 +5,18 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func ExecuteQueryLua(L *lua.LState, luaScript string, key string) ([]byte, error) {
+func ExecuteSetterLua(L *lua.LState, luaScript string, key string) error {
+
+}
+
+func ExecuteGetterLua(L *lua.LState, luaScript string, key string) ([]byte, error) {
 	// execute query lua when key not in cache
 	if err := L.DoString(luaScript); err != nil {
 		return nil, fmt.Errorf("lua execute error: %v", err)
 	}
 
 	// 获取查询函数
-	luaExecuteQuery := L.GetGlobal("executeQuery")
+	luaExecuteQuery := L.GetGlobal("getter")
 	if luaExecuteQuery == nil || L.GetTop() < 1 {
 		return nil, fmt.Errorf("get lua query func fail for key %s", key)
 	}

@@ -32,7 +32,7 @@ func main() {
 	})
 	s := grpc.NewServer(grpc.Creds(transportCredits))
 
-	rpc.RegisterCubeServer(s, &CubeNode{})
+	rpc.RegisterCubeServer(s, &CubeNode{cache: cache.New()})
 
 	lis, err := net.Listen("tcp", "0.0.0.0:4012")
 	if err != nil {

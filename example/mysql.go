@@ -16,7 +16,7 @@ function initDBConnection()
 end
 
 -- Lua脚本中的函数用于执行查询操作
-function executeQuery(db, query)
+function getter(db, query)
     -- 执行查询语句
     local rows, err = db:Query(query)
     if err ~= nil then

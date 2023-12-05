@@ -9,7 +9,7 @@ import (
 
 func handleGet(ctx *gin.Context) {
 	cubeName := ctx.Param("subPath")
-	cube, ok := cubeCache.Cubes[cubeName]
+	cube, ok := cubeCache.GetCube(cubeName)
 	if !ok {
 		ctx.JSON(400, gin.H{"msg": "cube " + cubeName + " not found"})
 		return
@@ -25,7 +25,7 @@ func handleGet(ctx *gin.Context) {
 
 func handlePost(ctx *gin.Context) {
 	cubeName := ctx.Param("subPath")
-	cube, ok := cubeCache.Cubes[cubeName]
+	cube, ok := cubeCache.GetCube(cubeName)
 	if !ok {
 		ctx.JSON(400, gin.H{"msg": "cube " + cubeName + " not found"})
 		return
@@ -36,7 +36,7 @@ func handlePost(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"msg": "read request body fail"})
 		return
 	}
-	cube.Set(key, body)
+	cube.Set(key, body, nil)
 	ctx.JSON(200, gin.H{"msg": "success"})
 }
 

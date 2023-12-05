@@ -3,18 +3,29 @@ package cache
 import (
 	"cubeCache/cube"
 	"cubeCache/rpc"
+	"sync"
 )
 
 // CubeCache keeps map from name to cube
 type CubeCache struct {
-	Cubes map[string]*cube.Cube
+	cubes map[string]*cube.Cube
+	mu    sync.RWMutex
 }
 
 func New() *CubeCache {
-	return &CubeCache{Cubes: make(map[string]*cube.Cube)}
+	return &CubeCache{cubes: make(map[string]*cube.Cube)}
 }
 
 func (c *CubeCache) NewCube(request *rpc.CreateCubeRequest) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	newCube := cube.New(request)
-	c.Cubes[request.CubeName] = newCube
+	c.cubes[request.CubeName] = newCube
+}
+
+func (c *CubeCache) GetCube(name string) (cube *cube.Cube, ok bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	cube, ok = c.cubes[name]
+	return cube, ok
 }

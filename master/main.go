@@ -1,19 +1,18 @@
 package main
 
 import (
-	"crypto/tls"
 	"cubeCache/cache"
 	"cubeCache/rpc"
-	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net"
-	"net/http"
-	"net/http/httputil"
-	"path/filepath"
 )
 
-var server *CubeMaster
+var (
+	server           *CubeMaster
+	transportCredits credentials.TransportCredentials
+)
 
 func main() {
 	println("CubeCache Master Initiating..")
@@ -47,42 +46,5 @@ func main() {
 		}
 	}()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				NextProtos:         []string{"h2"},
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	proxy := &httputil.ReverseProxy{
-		Director: proxyDirector,
-		ErrorHandler: func(writer http.ResponseWriter, request *http.Request, err error) {
-			log.Println(err.Error() + "\nreq:" + request.URL.RawPath)
-		},
-		Transport: client.Transport,
-	}
-	//proxy.Transport = &http.Transport{
-	//	TLSClientConfig: &tls.Config{
-	//		InsecureSkipVerify: true,
-	//	},
-	//	ForceAttemptHTTP2: true,
-	//}
-
-	server := &http.Server{
-		Addr:         ":4010",
-		Handler:      proxy,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
-	}
-
-	err = http2.ConfigureServer(server, nil)
-	if err != nil {
-		log.Fatal("configure http2 error:", err.Error())
-	}
-
-	println("rpc proxy listening on 0.0.0.0:4010")
-	if err := server.ListenAndServeTLS(filepath.Join("master", "cert"), filepath.Join("master", "key")); err != nil {
-		log.Fatal("Start proxy server failed:", err)
-	}
+	runProxy()
 }

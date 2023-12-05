@@ -1,48 +1,58 @@
 package main
 
 import (
-	"bytes"
-	"io"
-	"net/http"
-	"net/url"
+	"context"
+	"crypto/tls"
+	"errors"
+	"github.com/mwitkow/grpc-proxy/proxy"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"log"
+	"net"
 )
 
-// direct proxy
-func proxyDirector(req *http.Request) {
-	// get key from header
-	key := req.Header.Get("X-CubeCache-Key")
-	req.Header.Set("content-type", "application/grpc")
-	// TODO: change to ==
-	if key != "" {
-		resp := &http.Response{
-			StatusCode: http.StatusBadRequest,
-			Body:       io.NopCloser(bytes.NewBufferString("missing request key")),
-			Header:     make(http.Header),
-		}
-		resp.Header.Set("Content-Type", "application/grpc")
-		req.Response = resp
-		return
+func director(ctx context.Context, fullMethodName string) (context.Context, *grpc.ClientConn, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	keys, ok := md["cube_cache_key"]
+	if !ok || len(keys) != 1 {
+		return nil, nil, errors.New("cube proxy error: no cube_cache_key header")
 	}
+	target := server.mapper.Get(keys[0])
+	//TODO: DELETE ME
+	target = "127.0.0.1:4012"
 
-	targetURL := server.mapper.Get(key)
-	//TODO DELETE ME
-	targetURL = "http://127.0.0.1:4012"
+	outCtx := metadata.NewOutgoingContext(ctx, md)
 
-	// 解析透传地址
-	target, err := url.Parse(targetURL)
+	conn, err := grpc.DialContext(outCtx, target, grpc.WithCodec(proxy.Codec()), grpc.WithTransportCredentials(transportCredits))
 	if err != nil {
-		resp := &http.Response{
-			StatusCode: http.StatusInternalServerError,
-			Body:       io.NopCloser(bytes.NewBufferString("parse url fail")),
-			Header:     make(http.Header),
-		}
-		resp.Header.Set("Content-Type", "application/grpc")
-		req.Response = resp
-		return
+		return nil, nil, err
 	}
+	return ctx, conn, nil
+}
 
-	// 设置代理的目标地址
-	req.URL.Scheme = target.Scheme
-	req.URL.Host = target.Host
-	req.URL.Path = target.Path
+func runProxy() {
+	c, err := tls.LoadX509KeyPair("./master/cert", "./master/key")
+	if err != nil {
+		log.Fatalf("credentials.NewServerTLSFromFile err: %v", err)
+	}
+	transportCredits = credentials.NewTLS(&tls.Config{
+		Certificates:       []tls.Certificate{c},
+		InsecureSkipVerify: true,
+	})
+
+	proxyServer := grpc.NewServer(
+		grpc.CustomCodec(proxy.Codec()),
+		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
+		grpc.Creds(transportCredits),
+	)
+
+	println("rpc proxy listening on 0.0.0.0:4010")
+	lis, err := net.Listen("tcp", "0.0.0.0:4010")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	if err := proxyServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

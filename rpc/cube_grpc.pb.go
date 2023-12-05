@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.24.2
-// source: protobuf/cluster.proto
+// source: protobuf/cube.proto
 
 package rpc
 
@@ -140,7 +140,7 @@ var Cube_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "protobuf/cluster.proto",
+	Metadata: "protobuf/cube.proto",
 }
 
 const (
@@ -228,5 +228,5 @@ var CubeControl_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "protobuf/cluster.proto",
+	Metadata: "protobuf/cube.proto",
 }
