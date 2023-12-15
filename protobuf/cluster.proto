@@ -1,5 +1,26 @@
 syntax = "proto3";
 
 option go_package = "cubecache/cluster";
+import "protobuf/cube.proto";
 
+message RegisterNodeRequest{
+  string address = 1;
+}
 
+message RegisterNodeResponse{
+  bool success = 1;
+  repeated CreateCubeRequest cubes = 2;
+}
+
+message SendHeartbeatRequest{
+  string address = 1; // address with cube-service port
+}
+
+message SendHeartbeatResponse{
+  bool cleanCubes = 1;
+}
+
+service Cluster{
+  rpc RegisterNode(RegisterNodeRequest) returns(RegisterNodeResponse);
+  rpc SendHeartbeat(SendHeartbeatRequest) returns(SendHeartbeatResponse);
+}

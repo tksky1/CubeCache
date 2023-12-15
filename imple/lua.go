@@ -5,20 +5,38 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func ExecuteSetterLua(L *lua.LState, luaScript string, key string) error {
-
+// RegisterLuaFunc register the lua script to LState
+func RegisterLuaFunc(L *lua.LState, luaScript string) error {
+	if err := L.DoString(luaScript); err != nil {
+		return fmt.Errorf("register lua func error: %v", err)
+	}
+	return nil
 }
 
-func ExecuteGetterLua(L *lua.LState, luaScript string, key string) ([]byte, error) {
-	// execute query lua when key not in cache
-	if err := L.DoString(luaScript); err != nil {
-		return nil, fmt.Errorf("lua execute error: %v", err)
+func ExecuteSetterLua(L *lua.LState, key string, value []byte) error {
+	luaExecuteSetter := L.GetGlobal("setter")
+	if luaExecuteSetter == nil || L.GetTop() < 1 {
+		return fmt.Errorf("get lua setter func fail for key %s", key)
 	}
+	if err := L.CallByParam(lua.P{
+		Fn:      luaExecuteSetter,
+		NRet:    1,
+		Protect: true,
+	},
+		lua.LString(key),
+		lua.LString(value),
+	); err != nil {
+		return fmt.Errorf("setter lua for key %s run fail: %v", key, err)
+	}
+	return nil
+}
 
+// ExecuteGetterLua execute query lua when key not in cache
+func ExecuteGetterLua(L *lua.LState, funcName string, key string) ([]byte, error) {
 	// 获取查询函数
-	luaExecuteQuery := L.GetGlobal("getter")
+	luaExecuteQuery := L.GetGlobal(funcName)
 	if luaExecuteQuery == nil || L.GetTop() < 1 {
-		return nil, fmt.Errorf("get lua query func fail for key %s", key)
+		return nil, fmt.Errorf("get lua getter func fail for key %s", key)
 	}
 
 	// 调用查询函数

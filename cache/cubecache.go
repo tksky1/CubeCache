@@ -16,11 +16,12 @@ func New() *CubeCache {
 	return &CubeCache{cubes: make(map[string]*cube.Cube)}
 }
 
-func (c *CubeCache) NewCube(request *rpc.CreateCubeRequest) {
+func (c *CubeCache) NewCube(request *rpc.CreateCubeRequest) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	newCube := cube.New(request)
+	newCube, err := cube.New(request)
 	c.cubes[request.CubeName] = newCube
+	return err
 }
 
 func (c *CubeCache) GetCube(name string) (cube *cube.Cube, ok bool) {

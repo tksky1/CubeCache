@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"cubeCache/cache"
+	"cubeCache/cluster"
 	"cubeCache/rpc"
 	"net/http/httputil"
 )
 
 type CubeMaster struct {
 	*rpc.UnimplementedCubeControlServer
-	mapper *cache.Mapper
-	cache  *cache.CubeCache
-	proxy  *httputil.ReverseProxy
+	*cluster.UnimplementedClusterServer
+	mapper   *cache.Mapper
+	cache    *cache.CubeCache
+	proxy    *httputil.ReverseProxy
+	cubeList []*rpc.CreateCubeRequest
 }
 
 func (m *CubeMaster) CreateCube(ctx context.Context, in *rpc.CreateCubeRequest) (*rpc.CreateCubeResponse, error) {

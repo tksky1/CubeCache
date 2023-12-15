@@ -18,19 +18,22 @@ func main() {
 	println("CubeCache Master Initiating..")
 
 	cubeCache := cache.New()
-	cubeCache.NewCube(&rpc.CreateCubeRequest{
+	defaultCubeReq := &rpc.CreateCubeRequest{
 		CubeName:       "default",
 		MaxBytes:       102400,
 		CubeGetterFunc: nil,
 		OnEvictedFunc:  nil,
 		DelayWrite:     nil,
-	})
+	}
+	cubeCache.NewCube(defaultCubeReq)
 	s := grpc.NewServer()
 
 	server = &CubeMaster{
-		mapper: cache.NewMapper(3),
-		cache:  cubeCache,
+		mapper:   cache.NewMapper(3),
+		cache:    cubeCache,
+		cubeList: make([]*rpc.CreateCubeRequest, 1),
 	}
+	server.cubeList[0] = defaultCubeReq
 
 	rpc.RegisterCubeControlServer(s, server)
 

@@ -2,29 +2,30 @@ package cube
 
 import (
 	"cubeCache/lru"
+	"cubeCache/rpc"
 	"github.com/google/uuid"
 	"sync"
 	"testing"
 )
 
-func printEvicted(key string, value lru.CacheValue) {
-	println("evicted:", key)
-}
-
-func generateValue(key string) (lru.CacheValue, error) {
-	return []byte(uuid.New().String()), nil
-}
-
 func TestCubeSetGet(t *testing.T) {
 	syncMap := new(sync.Map)
-	cube := New("test", generateValue, printEvicted, 104857600)
+	cube, _ := New(&rpc.CreateCubeRequest{
+		CubeName:       "test",
+		MaxBytes:       104857600,
+		CubeInitFunc:   nil,
+		CubeGetterFunc: nil,
+		OnEvictedFunc:  nil,
+		DelayWrite:     nil,
+	})
+
 	for i := 1; i <= 10000; i++ {
 		go func(t *testing.T) {
 			entry := lru.CacheEntry{
 				Key:   uuid.New().String(),
 				Value: []byte(uuid.New().String()),
 			}
-			cube.Set(entry.Key, entry.Value)
+			cube.Set(entry.Key, entry.Value, nil)
 			syncMap.Store(entry.Key, entry.Value)
 			cubeOut, ok := cube.Get(entry.Key)
 			if !ok {
@@ -32,7 +33,7 @@ func TestCubeSetGet(t *testing.T) {
 				return
 			}
 			mapOut, _ := syncMap.Load(entry.Key)
-			std := mapOut.(*lru.Bytes).B
+			std := mapOut.(lru.CacheValue)
 			if string(std) != string(cubeOut) {
 				t.Errorf("test concurrency fail 2")
 				return

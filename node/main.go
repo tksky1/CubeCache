@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"cubeCache/cache"
 	"cubeCache/rpc"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"log"
@@ -11,6 +12,9 @@ import (
 )
 
 func main() {
+
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetReportCaller(true)
 	println("CubeCache Node Initiating..")
 
 	cubeCache := cache.New()
@@ -32,7 +36,7 @@ func main() {
 	})
 	s := grpc.NewServer(grpc.Creds(transportCredits))
 
-	rpc.RegisterCubeServer(s, &CubeNode{cache: cache.New()})
+	rpc.RegisterCubeServer(s, &CubeNode{cache: cubeCache})
 
 	lis, err := net.Listen("tcp", "0.0.0.0:4012")
 	if err != nil {
