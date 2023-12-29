@@ -22,13 +22,16 @@ func director(ctx context.Context, fullMethodName string) (context.Context, *grp
 	//TODO: DELETE ME
 	target = "127.0.0.1:4012"
 
+	if fullMethodName == "/Cube/Get" {
+
+	}
 	outCtx := metadata.NewOutgoingContext(ctx, md)
 
 	conn, err := grpc.DialContext(outCtx, target, grpc.WithCodec(proxy.Codec()), grpc.WithTransportCredentials(transportCredits))
 	if err != nil {
 		return nil, nil, err
 	}
-	return ctx, conn, nil
+	return outCtx, conn, nil
 }
 
 func runProxy() {

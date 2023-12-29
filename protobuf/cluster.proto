@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-option go_package = "cubecache/cluster";
+option go_package = "cubeCache/cluster";
+
 import "protobuf/cube.proto";
 
 message RegisterNodeRequest{
@@ -14,10 +15,11 @@ message RegisterNodeResponse{
 
 message SendHeartbeatRequest{
   string address = 1; // address with cube-service port
+  int32 cubeWeight = 2; // to verify cube consistency
 }
 
 message SendHeartbeatResponse{
-  bool cleanCubes = 1;
+  bool inconsistent = 1; // cube inconsistent with master or heartbeat lost, re-register needed
 }
 
 service Cluster{

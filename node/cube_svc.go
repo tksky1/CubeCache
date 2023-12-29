@@ -6,6 +6,7 @@ import (
 	"cubeCache/rpc"
 	"errors"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/metadata"
 )
 
 type CubeNode struct {
@@ -14,9 +15,11 @@ type CubeNode struct {
 }
 
 func (n CubeNode) Get(ctx context.Context, req *rpc.GetValueRequest) (res *rpc.GetValueResponse, err error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	keys, ok := md["cube_cache_key"]
 	cube, ok := n.cache.GetCube(req.CubeName)
 	if ok {
-		ret, ok := cube.Get(req.Key)
+		ret, ok := cube.Get(keys[0])
 		logrus.Debugf("get value for key %s success: %s", req.Key, string(ret))
 		return &rpc.GetValueResponse{
 			Ok:      ok,
